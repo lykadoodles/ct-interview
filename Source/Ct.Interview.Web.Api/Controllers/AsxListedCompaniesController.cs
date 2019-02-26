@@ -1,5 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Ct.Interview.Web.Api.Interfaces;
 
 namespace Ct.Interview.Web.Api.Controllers
 {
@@ -7,19 +10,29 @@ namespace Ct.Interview.Web.Api.Controllers
     [ApiController]
     public class AsxListedCompaniesController : ControllerBase
     {
-        private IAsxListedCompaniesService _asxListedCompaniesService;
+        private readonly IAsxListedCompaniesService _asxListedCompaniesService;
 
         public AsxListedCompaniesController(IAsxListedCompaniesService asxListedCompaniesService)
         {
-            _asxListedCompaniesService = asxListedCompaniesService;
+            _asxListedCompaniesService = asxListedCompaniesService ?? throw new ArgumentNullException(nameof(asxListedCompaniesService)) ;
         }
 
         [HttpGet]
-        public async Task<ActionResult<AsxListedCompanyResponse[]>> Get(string asxCode)
+        public async Task<ActionResult<AsxListedCompanyResponse>> GetByAsxCode(string asxCode)
         {
-            var asxListedCompanies = await _asxListedCompaniesService.GetByAsxCode(asxCode);
+            try
+            {
+                AsxListedCompany asxListedCompanies = await _asxListedCompaniesService.GetByAsxCode(asxCode).ConfigureAwait(false);
 
-            return asxListedCompanies;
+                AsxListedCompanyResponse asxListedCompaniesResponse = JsonConvert.DeserializeObject<AsxListedCompanyResponse>(asxListedCompanies.ToString());
+
+                return Ok(asxListedCompaniesResponse);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+            
         }
     }
 }
